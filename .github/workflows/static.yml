@@ -1,0 +1,692 @@
+# Simple workflow for deploying static content to GitHub Pages
+name: Deploy static content to Pages
+
+on:
+  # Runs on pushes targeting the default branch
+  push:
+    branches: ["main"]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
+# However, do NOT cancel in-progress runs as we want to allow these production deployments to complete.
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  # Single deploy job since we're just deploying
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          # Upload entire repository
+          path: '.'
+      - name: Deploy to GitHub Pages
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Use-Case Prioritization and Maturity Assessment Template</title>
+  <style>
+    :root {
+      --navy: #173f62;
+      --blue: #e9eef5;
+      --light-blue: #f5f8fb;
+      --orange: #f26522;
+      --border: #888;
+      --gray: #555;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: Arial, sans-serif;
+      font-size: 11pt;
+      line-height: 1.45;
+      color: #222;
+      margin: 0.65in;
+    }
+
+    h1 {
+      color: var(--navy);
+      font-size: 22pt;
+      margin: 0 0 8px;
+    }
+
+    h2 {
+      color: var(--navy);
+      font-size: 16pt;
+      margin: 28px 0 10px;
+      padding-bottom: 4px;
+      border-bottom: 2px solid var(--orange);
+    }
+
+    h3 {
+      color: var(--navy);
+      font-size: 12.5pt;
+      margin: 22px 0 8px;
+    }
+
+    p { margin: 8px 0; }
+
+    ul, ol {
+      margin: 8px 0 8px 24px;
+      padding-left: 16px;
+    }
+
+    li { margin: 6px 0; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 10px 0 18px;
+      page-break-inside: avoid;
+    }
+
+    th, td {
+      border: 1px solid var(--border);
+      padding: 8px 10px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      background-color: var(--blue);
+      font-weight: bold;
+    }
+
+    .title-note {
+      color: var(--gray);
+      font-size: 10.5pt;
+      margin-bottom: 22px;
+    }
+
+    .definition {
+      background-color: var(--light-blue);
+      border-left: 4px solid var(--navy);
+      padding: 12px 16px;
+      margin: 12px 0 16px;
+    }
+
+    .instructions {
+      background-color: #fff7ef;
+      border-left: 4px solid var(--orange);
+      padding: 12px 16px;
+      margin: 12px 0 16px;
+    }
+
+    .label { font-weight: bold; }
+
+    .score {
+      width: 16%;
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    .small-score {
+      width: 12%;
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    .input {
+      color: var(--gray);
+      font-style: italic;
+    }
+
+    .formula {
+      font-style: italic;
+      margin: 10px 0;
+    }
+
+    .page-break { page-break-before: always; }
+
+    @media print {
+      body { margin: 0.5in; }
+      h2 { page-break-after: avoid; }
+    }
+  </style>
+</head>
+<body>
+
+  <h1>AI Use-Case Prioritization and Maturity Assessment Template</h1>
+  <p class="title-note">Use this template to assess an AI project, determine its readiness tier, and identify capability gaps across the six AI maturity dimensions.</p>
+
+  <div class="instructions">
+    <p><strong>How to use this template</strong></p>
+    <ol>
+      <li>Complete the Use-Case Overview.</li>
+      <li>Complete the Use-Case Prioritization section to determine whether the project is Prime Time, Emerging, or Frontier.</li>
+      <li>Score each of the six maturity dimensions from 1 to 5.</li>
+      <li>Calculate the average score for each maturity dimension.</li>
+      <li>Document actions needed to improve readiness and support implementation.</li>
+    </ol>
+  </div>
+
+  <div id="overview"></div>
+  <div id="prioritization"></div>
+  <div id="maturity"></div>
+
+  <script>
+    const placeholder = text => `<span class="input">[${text}]</span>`;
+
+    function table(headers, rows, className = "") {
+      return `
+        <table class="${className}">
+          <thead>
+            <tr>${headers.map(header => `<th>${header}</th>`).join("")}</tr>
+          </thead>
+          <tbody>
+            ${rows.map(row => `<tr>${row.map(cell => `<td>${cell}</td>`).join("")}</tr>`).join("")}
+          </tbody>
+        </table>`;
+    }
+
+    function scoreResult(title, components, formula) {
+      const rows = components.map(item => [item, `<span class="score input">[1–5]</span>`]);
+      rows.push(["Total", `<span class="score input">[__/15]</span>`]);
+      rows.push(["Average", `<span class="score input">[__/5]</span>`]);
+      rows.push([`<strong>Rounded ${title} Score</strong>`, `<span class="score input"><strong>[1–5]</strong></span>`]);
+
+      return `
+        <h3>${title} Result</h3>
+        ${table(["Component", '<span class="score">Score</span>'], rows)}
+        <p class="formula"><strong>${title} Score:</strong> ${formula}</p>`;
+    }
+
+    function assessmentTable(rows) {
+      return table(
+        ["Assessment item", "Response"],
+        rows.map(row => [row[0], placeholder(row[1])])
+      );
+    }
+
+    function scoreGuide(rows) {
+      return table(
+        ['<span class="score">Score</span>', "Scoring guide"],
+        rows.map(row => [`<span class="score">${row[0]}</span>`, row[1]])
+      );
+    }
+
+    document.getElementById("overview").innerHTML = `
+      <h2>1. Use-Case Overview</h2>
+      ${table(
+        ["Field", "Project information"],
+        [
+          ["AI use-case name", placeholder("Enter a short name for the AI project")],
+          ["Use-case description", placeholder("Describe what the AI will do, who will use it, and what problem it will solve")],
+          ["Primary business goal", placeholder("Describe the intended business outcome")],
+          ["Primary owner", placeholder("Enter accountable department and business owner")],
+          ["Technical owner", placeholder("Enter accountable technology owner, team, or role")],
+          ["Deployment status", placeholder("Idea / Discovery / Pilot / Active / Scaled / Retired")],
+          ["Primary users", placeholder("List the employees, customers, partners, or other users")],
+          ["Affected departments", placeholder("List every department that will use, support, provide data to, approve, or be changed by this AI solution")],
+          ["Use-case categories", placeholder("Select all that apply: Personal productivity; Knowledge and decision support; Workflow automation; Operational intelligence; Customer and revenue enablement; Product and engineering; Enterprise services; Customer-facing AI products or features")],
+          ["Date assessed", placeholder("Enter date")],
+          ["Assessor(s)", placeholder("Enter name(s) and role(s)")]
+        ]
+      )}
+
+      <h3>Affected Departments and Impact</h3>
+      ${table(
+        ["Department", "How it is affected"],
+        Array.from({ length: 5 }, () => [
+          placeholder("Department"),
+          placeholder("Describe how this department uses, supports, provides data to, approves, or is affected by the AI solution")
+        ])
+      )}`;
+
+    document.getElementById("prioritization").innerHTML = `
+      <h2>2. Use-Case Prioritization Tier</h2>
+      <div class="definition">
+        <p><strong>Purpose:</strong> This section determines whether the specific AI use case is ready to move forward now, requires preparation, or needs significant foundational work.</p>
+      </div>
+
+      ${table(
+        ["Tier", "Definition", "Recommended action"],
+        [
+          ["<strong>Prime Time</strong>", "High-value use case with sufficient data, process readiness, ownership, governance, and available technology to begin now.", "Launch or scale within the next 1–2 quarters."],
+          ["<strong>Emerging</strong>", "High-potential use case, but one or more readiness gaps—such as data, integration, workflow design, skills, or governance—must be addressed first.", "Define and fund readiness work; then run a controlled pilot."],
+          ["<strong>Frontier</strong>", "Strategic opportunity with potential long-term value, but it requires substantial foundational investment, infrastructure, data, process, or organizational change before deployment is realistic.", "Retain on the roadmap; build the required foundations before implementation."]
+        ]
+      )}
+
+      <h3>Simple Use-Case Readiness Check</h3>
+      <p>Score each question from 1 to 5.</p>
+      ${table(
+        ["Question", '<span class="small-score">Score<br>1–5</span>', "Comments / Evidence"],
+        [
+          ["Will this AI use case help the company in an important way?", '<span class="small-score input">[1–5]</span>', placeholder("How will it save time, reduce cost, improve revenue, improve quality, help customers, or help employees?")],
+          ["Do we know the problem we are trying to solve?", '<span class="small-score input">[1–5]</span>', placeholder("Describe the problem, users, and desired outcome")],
+          ["Do we have the information AI needs?", '<span class="small-score input">[1–5]</span>', placeholder("List available data, knowledge, documentation, and missing information")],
+          ["Do we have someone who owns this idea?", '<span class="small-score input">[1–5]</span>', placeholder("Identify the accountable business owner and technical owner")],
+          ["Can people use it without excessive extra work?", '<span class="small-score input">[1–5]</span>', placeholder("Describe workflow changes, adoption needs, and training needs")],
+          ["Can we do this safely?", '<span class="small-score input">[1–5]</span>', placeholder("Describe privacy, security, legal, quality, and human-review requirements")],
+          ["Can we start soon?", '<span class="small-score input">[1–5]</span>', placeholder("Describe availability of tools, budget, people, systems, and approvals")],
+          ["Can we tell if it worked?", '<span class="small-score input">[1–5]</span>', placeholder("List possible success measures, baselines, and targets")],
+          ["<strong>Total score</strong>", '<span class="small-score input"><strong>[__/40]</strong></span>', placeholder("Add all eight scores")]
+        ]
+      )}
+
+      ${table(
+        ["Total score", "Recommended tier", "Interpretation"],
+        [
+          ["32–40", "Prime Time", "A strong AI opportunity that is ready for a pilot or implementation, subject to required governance approval."],
+          ["24–31", "Emerging", "A good opportunity with meaningful gaps to address before broad deployment."],
+          ["8–23", "Frontier", "An opportunity that may be strategically valuable but requires significant foundational work."]
+        ]
+      )}
+
+      <div class="instructions">
+        <p><strong>Important readiness rule:</strong> A use case should not be classified as Prime Time if any of the following scores are 1 or 2:</p>
+        <ul>
+          <li>Do we have the information AI needs?</li>
+          <li>Do we have someone who owns this idea?</li>
+          <li>Can we do this safely?</li>
+          <li>Can we tell if it worked?</li>
+        </ul>
+        <p>If any of these scores are 1 or 2, classify the use case as Emerging or Frontier and document what must be fixed first.</p>
+      </div>
+
+      ${assessmentTable([
+        ["Recommended tier", "Prime Time / Emerging / Frontier"],
+        ["Reason for tier", "Summarize the primary reasons for this classification"],
+        ["Required actions before next stage", "List the most important data, people, integration, outcome, or governance requirements"],
+        ["Recommended next step", "Launch pilot / Complete readiness work / Conduct discovery / Build foundational capability / Defer"]
+      ])}`;
+
+    const functionalGuide = [
+      ["1", "No meaningful deployment, or isolated individual experimentation."],
+      ["2", "One function has an active AI use case."],
+      ["3", "Two or three functions have active AI use cases."],
+      ["4", "Four or five functions have active AI use cases."],
+      ["5", "AI is used across six or more functions, including core business functions and shared services."]
+    ];
+
+    const diversityGuide = [
+      ["1", "No active use case, or only one narrow experiment."],
+      ["2", "AI supports one category of work, usually personal productivity."],
+      ["3", "AI supports two or three categories of work."],
+      ["4", "AI supports four or five categories of work."],
+      ["5", "AI supports six or more categories of work, including at least one core operational, customer, product, or revenue-related category."]
+    ];
+
+    const embeddednessGuide = [
+      ["1", "AI use is informal, individual, or limited to experimentation."],
+      ["2", "AI is used by some employees, but mostly as a standalone tool outside normal workflows."],
+      ["3", "AI is used in repeatable team workflows, with some documented processes or integrations."],
+      ["4", "AI is integrated into several important workflows, systems, or operating processes and has accountable owners."],
+      ["5", "AI is embedded in mission-critical workflows or customer-facing products, continuously improved, and supported by established operating practices."]
+    ];
+
+    function maturitySection(number, title, definition, sections, resultTitle, components) {
+      return `
+        <div class="page-break"></div>
+        <h2>${number}. ${title}</h2>
+        <div class="definition"><p><strong>Definition:</strong> ${definition}</p></div>
+        ${sections.join("")}
+        ${scoreResult(resultTitle, components, `Round((${components.map(component => component.replaceAll(" ", " ")).join(" + ")}) / 3)`)}
+      `;
+    }
+
+    const deployment = maturitySection(
+      4,
+      "Deployment Depth",
+      "Deployment Depth measures how broadly and meaningfully AI is being used. It is not simply the number of AI projects or tools. It considers the number of functions affected, the diversity of work categories supported, and how deeply AI is embedded in repeatable and important workflows.",
+      [
+        `<h3>A. Functional Reach</h3>
+         <p><span class="label">Question:</span> How many departments have meaningful AI use or are materially affected by this use case?</p>
+         ${scoreGuide(functionalGuide)}
+         ${assessmentTable([
+           ["Functional Reach score", "1–5"],
+           ["Affected departments", "List departments and describe how each is affected"],
+           ["Comments / Evidence", "Explain why this score was selected"]
+         ])}`,
+        `<h3>B. Use-Case Diversity</h3>
+         <p><span class="label">Question:</span> How many different categories of work does this AI use case support?</p>
+         ${table(
+           ["Use-case category", "Does this project support it?", "How?"],
+           ["Personal productivity", "Knowledge and decision support", "Workflow automation", "Operational intelligence", "Customer and revenue enablement", "Product and engineering", "Enterprise services", "Customer-facing AI products or features"]
+             .map(category => [category, placeholder("Yes / No"), placeholder("Describe")])
+         )}
+         ${scoreGuide(diversityGuide)}
+         ${assessmentTable([
+           ["Use-Case Diversity score", "1–5"],
+           ["Categories represented", "List selected categories"],
+           ["Comments / Evidence", "Explain why this score was selected"]
+         ])}`,
+        `<h3>C. Operational Embeddedness</h3>
+         <p><span class="label">Question:</span> How deeply is AI built into important, repeatable workflows?</p>
+         ${scoreGuide(embeddednessGuide)}
+         ${assessmentTable([
+           ["Operational Embeddedness score", "1–5"],
+           ["Current workflow", "Describe the workflow from start to finish and where AI is used"],
+           ["Human oversight", "Describe review, approval, override, and escalation requirements"],
+           ["Comments / Evidence", "Explain why this score was selected"]
+         ])}`
+      ],
+      "Deployment Depth",
+      ["Functional reach", "Use-case diversity", "Operational embeddedness"]
+    );
+
+    const systems = maturitySection(
+      5,
+      "Systems Integration",
+      "Systems Integration measures how well the AI solution connects with the systems, information, and workflows employees already use. It considers workflow integration, secure connectivity to required systems and data, and whether integrations are reliable, monitored, and supported over time.",
+      [
+        `<h3>A. Workflow Integration</h3>
+         <p><span class="label">Question:</span> Does the AI work inside the normal workflow, or do people have to leave their normal tools to use it?</p>
+         ${assessmentTable([
+           ["Workflow Integration score", "1–5"],
+           ["Primary system or workflow", "Enter primary system or business process"],
+           ["Current workflow", "Describe the workflow from intake through completion"],
+           ["What is integrated today?", "List connected systems, interfaces, and automated steps"],
+           ["What requires manual work?", "List copying, switching tools, manual approvals, or other handoffs"],
+           ["Comments / Evidence", "Explain why this score was selected"]
+         ])}`,
+        `<h3>B. Data and System Connectivity</h3>
+         <p><span class="label">Question:</span> Can the AI securely access the systems and information it needs to do its job well?</p>
+         ${table(
+           ["System or information source", "Why it is needed", "Integration status", "Owner"],
+           Array.from({ length: 4 }, () => [placeholder("System / source"), placeholder("Why needed"), placeholder("Connected / Planned / Not available / Not needed"), placeholder("Owner")])
+         )}
+         ${assessmentTable([
+           ["Data and System Connectivity score", "1–5"],
+           ["Key integration gaps", "List missing systems, data sources, APIs, permissions, or dependencies"],
+           ["Comments / Evidence", "Explain why this score was selected"]
+         ])}`,
+        `<h3>C. Integration Reliability and Supportability</h3>
+         <p><span class="label">Question:</span> Can the integrations be trusted, monitored, and supported over time?</p>
+         ${assessmentTable([
+           ["Integration Reliability and Supportability score", "1–5"],
+           ["Integration owner(s)", "List owners and support contacts"],
+           ["Monitoring and alerts", "Describe availability, latency, errors, cost, accuracy, and usage monitoring"],
+           ["Failure and incident process", "Describe what happens when an integration or AI service fails"],
+           ["Change-management process", "Describe testing, release, rollback, and approval processes"],
+           ["Comments / Evidence", "Explain why this score was selected"]
+         ])}`
+      ],
+      "Systems Integration",
+      ["Workflow integration", "Data and system connectivity", "Integration reliability and supportability"]
+    );
+
+    const data = maturitySection(
+      6,
+      "Data",
+      "Data measures whether the company’s AI can access enough useful, accurate, secure, and well-managed company information to perform the intended task. It considers availability, quality, organization, permissions, ownership, and ongoing management—not simply whether data exists.",
+      [
+        `<h3>A. Data Availability and Coverage</h3>
+         <p><span class="label">Question:</span> Does the AI have access to the information it needs to perform the intended task?</p>
+         ${table(
+           ["Data source", "Why it is needed", "Availability", "Owner"],
+           Array.from({ length: 4 }, () => [placeholder("Data source"), placeholder("Why needed"), placeholder("Available / Partial / Planned / Not available"), placeholder("Owner")])
+         )}
+         ${assessmentTable([
+           ["Data Availability and Coverage score", "1–5"],
+           ["Missing or incomplete data", "List missing business context, historical data, product information, documentation, labels, or other sources"],
+           ["Comments / Evidence", "Explain why this score was selected"]
+         ])}`,
+        `<h3>B. Data Quality and Usability</h3>
+         <p><span class="label">Question:</span> Is the information accurate, current, organized, and easy for the AI to use?</p>
+         ${table(
+           ["Data area", "Current condition", "Potential impact on the AI solution", "Improvement needed"],
+           Array.from({ length: 4 }, () => [placeholder("Data area"), placeholder("Describe quality, completeness, consistency, freshness, and format"), placeholder("Describe risk or impact"), placeholder("Describe action")])
+         )}
+         ${assessmentTable([
+           ["Data Quality and Usability score", "1–5"],
+           ["Priority data improvements", "List the most important cleanup, standardization, labeling, documentation, or content-management actions"],
+           ["Comments / Evidence", "Explain why this score was selected"]
+         ])}`,
+        `<h3>C. Data Management, Security, and Governance</h3>
+         <p><span class="label">Question:</span> Are the data owners, access rules, security controls, and update processes clear?</p>
+         ${table(
+           ["Data management area", "Current status", "Gap or action needed"],
+           ["Data ownership", "Access controls", "Approved content and data sources", "Customer or sensitive data handling", "Data retention and deletion", "Ongoing data maintenance"]
+             .map(item => [item, placeholder("Status"), placeholder("Gap / action")])
+         )}
+         ${assessmentTable([
+           ["Data Management, Security, and Governance score", "1–5"],
+           ["Comments / Evidence", "Explain why this score was selected"]
+         ])}`
+      ],
+      "Data",
+      ["Data availability and coverage", "Data quality and usability", "Data management, security, and governance"]
+    );
+
+    const outcomes = maturitySection(
+      7,
+      "Outcomes",
+      "Outcomes measures whether AI deployments have clear goals and can show measurable results. It considers usage, quality, operational performance, customer impact, financial value, unintended consequences, accountability, and continuous improvement.",
+      [
+        `<h3>A. Clear Goals and Success Measures</h3>
+         <p><span class="label">Question:</span> Does the deployment have clear goals, a baseline, specific success measures, and agreed targets?</p>
+         ${table(
+           ["Outcome area", "Success measure", "Baseline", "Target", "Owner"],
+           Array.from({ length: 4 }, () => [placeholder("Outcome area"), placeholder("Metric"), placeholder("Current baseline"), placeholder("Target"), placeholder("Owner")])
+         )}
+         ${assessmentTable([
+           ["Clear Goals and Success Measures score", "1–5"],
+           ["Comments / Evidence", "Explain whether goals, baselines, measures, targets, and owners are defined"]
+         ])}`,
+        `<h3>B. Measurement and Reporting Capability</h3>
+         <p><span class="label">Question:</span> Can the organization collect, analyze, and report the information needed to understand usage and results?</p>
+         ${table(
+           ["Measurement need", "Data source or method", "Current status", "Gap or action needed"],
+           ["AI usage and adoption", "Workflow performance", "Quality and accuracy", "Customer or employee impact", "Financial or operational value", "Risk and unintended consequences"]
+             .map(item => [item, placeholder("Source / method"), placeholder("Status"), placeholder("Gap / action")])
+         )}
+         ${assessmentTable([
+           ["Measurement and Reporting Capability score", "1–5"],
+           ["Reporting cadence", "Weekly / Monthly / Quarterly / Other"],
+           ["Dashboard or report owner", "Owner"],
+           ["Comments / Evidence", "Explain why this score was selected"]
+         ])}`,
+        `<h3>C. Learning, Accountability, and Continuous Improvement</h3>
+         <p><span class="label">Question:</span> Is there a regular process for reviewing results, learning from them, and improving the AI deployment?</p>
+         ${table(
+           ["Continuous-improvement area", "Current status", "Gap or action needed"],
+           ["Metric ownership", "Review cadence", "User feedback process", "Quality review process", "Improvement actions", "Scale, pause, or stop criteria"]
+             .map(item => [item, placeholder("Status"), placeholder("Gap / action")])
+         )}
+         ${assessmentTable([
+           ["Learning, Accountability, and Continuous Improvement score", "1–5"],
+           ["Comments / Evidence", "Explain why this score was selected"]
+         ])}`
+      ],
+      "Outcomes",
+      ["Clear goals and success measures", "Measurement and reporting capability", "Learning, accountability, and continuous improvement"]
+    );
+
+    const people = maturitySection(
+      8,
+      "People and Change Enablement",
+      "People and Change Enablement measures whether employees, leaders, and affected teams have the skills, confidence, support, and motivation to use AI effectively and responsibly. It includes leadership sponsorship, role clarity, training, communication, adoption, feedback, workflow change, and trust.",
+      [
+        `<h3>A. Leadership Sponsorship and Role Clarity</h3>
+         <p><span class="label">Question:</span> Do leaders support the deployment, and does everyone understand who owns decisions, training, adoption, support, and ongoing improvement?</p>
+         ${table(
+           ["Role or group", "Expected responsibility", "Current status"],
+           [
+             ["Executive sponsor", "Supports the business goal, removes barriers, provides resources, and reinforces adoption expectations."],
+             ["Business owner", "Owns the use case, workflow decisions, success measures, and business results."],
+             ["Managers", "Coach users, monitor adoption, gather feedback, and help resolve workflow questions."],
+             ["Primary users", "Use AI recommendations, apply human judgment, provide feedback, and escalate issues."],
+             ["Technical owner", "Maintains the AI platform, integrations, access, technical support, and monitoring."],
+             ["Legal / Compliance / Information Security", "Provides guidance on safe use, customer-data handling, oversight, and required controls."],
+             ["Other affected departments", "Provide input, receive outputs, and identify downstream impacts."]
+           ].map(row => [row[0], row[1], placeholder("Enter name, role, or status")])
+         )}
+         ${table(["<span class='score'>Score</span>", "Assessment"], [[`<span class="score input">[1–5]</span>`, placeholder("Explain whether leadership support, role ownership, responsibilities, and decision rights are clear.")]])}
+         <p><span class="label">Comments / Evidence</span></p>
+         <p>${placeholder("Describe leadership support, ownership gaps, unclear responsibilities, or required actions.")}</p>`,
+        `<h3>B. Skills, Training, and Confidence</h3>
+         <p><span class="label">Question:</span> Do affected employees know how to use the AI solution, understand its limits, and feel confident using it responsibly?</p>
+         ${table(
+           ["Training or capability area", "What employees need to know", "Current status"],
+           [
+             ["Purpose of the AI solution", "What the AI does, why it is being introduced, and how it supports human judgment."],
+             ["Using AI recommendations", "How to use, review, edit, accept, reject, or override AI outputs."],
+             ["Human review expectations", "Which decisions users must review, approve, reject, or escalate before action is taken."],
+             ["Safe and responsible use", "How to handle sensitive information, incorrect outputs, unsafe recommendations, and escalation needs."],
+             ["Feedback and issue reporting", "How to report poor AI outputs, missing knowledge, workflow issues, or safety concerns."],
+             ["Manager coaching", "How managers support users, monitor adoption, answer questions, and reinforce expectations."]
+           ].map(row => [row[0], row[1], placeholder("Status")])
+         )}
+         ${table(["<span class='score'>Score</span>", "Assessment"], [[`<span class="score input">[1–5]</span>`, placeholder("Explain whether users have practical training, understand AI limitations, know when to override outputs, and have access to support.")]])}
+         <p><span class="label">Comments / Evidence</span></p>
+         <p>${placeholder("Describe training needs, user confidence, manager readiness, practice opportunities, reference materials, and support resources.")}</p>`,
+        `<h3>C. Adoption, Trust, and Change Support</h3>
+         <p><span class="label">Question:</span> Are people willing and able to change how they work, and is there a plan to support adoption over time?</p>
+         ${table(
+           ["Change enablement area", "What needs to be in place", "Current status"],
+           [
+             ["Communication", "Clear messages explain the purpose, benefits, limits, timing, and expected changes to the workflow."],
+             ["Employee involvement", "Users and managers help test the solution, identify risks, improve workflows, and shape training."],
+             ["Trust and transparency", "Employees understand what the AI can and cannot do and how human judgment remains central."],
+             ["Workflow changes", "New steps, roles, approvals, escalations, and quality checks are documented and manageable."],
+             ["Feedback loop", "Users can submit feedback and see that feedback leads to improvements."],
+             ["Adoption monitoring", "Leaders track usage, training completion, sentiment, acceptance, edits, rejections, and common questions."]
+           ].map(row => [row[0], row[1], placeholder("Status")])
+         )}
+         ${table(["<span class='score'>Score</span>", "Assessment"], [[`<span class="score input">[1–5]</span>`, placeholder("Explain whether users are involved, communication is clear, workflow changes are manageable, and adoption is actively supported.")]])}
+         <p><span class="label">Comments / Evidence</span></p>
+         <p>${placeholder("Describe communication plans, user feedback channels, champions, adoption barriers, employee sentiment, and support actions.")}</p>`
+      ],
+      "People and Change Enablement",
+      ["Leadership sponsorship and role clarity", "Skills, training, and confidence", "Adoption, trust, and change support"]
+    );
+
+    const governance = maturitySection(
+      9,
+      "Governance, Risk, and Security",
+      "Governance, Risk, and Security measures whether the organization has clear, practical controls for using AI responsibly. It includes policies, approval paths, risk assessment, privacy, security, human oversight, quality controls, documentation, monitoring, and accountability.",
+      [
+        `<h3>A. Policies, Approval, and Accountability</h3>
+         <p><span class="label">Question:</span> Are the rules, approvals, responsibilities, and decision paths for this AI use case clear?</p>
+         ${table(
+           ["Governance area", "What needs to be clear", "Current status"],
+           [
+             ["Approved AI tool", "The AI platform has been reviewed and approved for the intended use."],
+             ["Use-case approval", "The business purpose, scope, risks, data use, and implementation plan have been reviewed by appropriate stakeholders."],
+             ["Business ownership", "A business owner is accountable for the workflow, user adoption, performance, and business impact."],
+             ["Technical ownership", "A technical owner is accountable for the AI platform, integrations, access, monitoring, and support."],
+             ["Risk approval", "Legal / Compliance, Information Security, Privacy, and other relevant teams review the use case based on its risk level."],
+             ["Escalation path", "Employees know who to contact when they identify an incorrect output, data concern, security issue, or customer-impact risk."],
+             ["Scale-up decision", "Clear criteria determine who can approve expansion beyond a pilot or limited deployment."]
+           ].map(row => [row[0], row[1], placeholder("Status")])
+         )}
+         ${table(["<span class='score'>Score</span>", "Assessment"], [[`<span class="score input">[1–5]</span>`, placeholder("Explain whether policies, roles, approvals, escalation paths, and scale-up decisions are clear.")]])}
+         <p><span class="label">Comments / Evidence</span></p>
+         <p>${placeholder("Describe approval requirements, decision owners, unresolved roles, escalation paths, and requirements for scale-up.")}</p>`,
+        `<h3>B. Data Protection, Security, and Access Controls</h3>
+         <p><span class="label">Question:</span> Is company, customer, employee, and other sensitive information protected, and can only authorized people and systems access the AI solution and its data?</p>
+         ${table(
+           ["Security and privacy area", "What needs to be in place", "Current status"],
+           [
+             ["Data classification", "The organization knows what types of company, customer, employee, product, and other information will be processed by the AI."],
+             ["Approved data use", "Rules define what data may be sent to the AI platform, retained, used for improvement, or shared with third parties."],
+             ["Identity and access management", "Access is limited to authorized users and systems based on role and business need."],
+             ["Data encryption", "Data is protected while being transmitted and stored according to company security requirements."],
+             ["Vendor and platform review", "The AI provider’s security, privacy, data-retention, contractual, and data-use practices are reviewed and approved."],
+             ["Logging and auditability", "Appropriate records are retained for access, AI activity, user actions, and investigations."],
+             ["Incident response", "There is a process for responding to unauthorized access, data exposure, harmful output, or misuse."]
+           ].map(row => [row[0], row[1], placeholder("Status")])
+         )}
+         ${table(["<span class='score'>Score</span>", "Assessment"], [[`<span class="score input">[1–5]</span>`, placeholder("Explain whether data handling, access, encryption, vendor review, audit logging, and incident response are sufficient for this use case.")]])}
+         <p><span class="label">Comments / Evidence</span></p>
+         <p>${placeholder("Describe data types, access restrictions, vendor risks, retention requirements, security controls, and open actions.")}</p>`,
+        `<h3>C. Human Oversight, Quality Controls, and Ongoing Risk Management</h3>
+         <p><span class="label">Question:</span> Are there safeguards to prevent harmful, inaccurate, biased, or inappropriate AI outputs from affecting customers, employees, or business operations?</p>
+         ${table(
+           ["Control area", "What needs to be in place", "Current status"],
+           [
+             ["Human review", "Users review, edit, and approve AI outputs where human judgment is required."],
+             ["Override and escalation", "Users can override AI recommendations and escalate incorrect, unsafe, or high-risk outputs."],
+             ["Quality assurance", "A sample of AI-assisted work is reviewed for accuracy, relevance, tone, safety, and business impact."],
+             ["Output limitations", "Rules define which tasks AI may support and which decisions it may not make independently."],
+             ["Bias and consistency review", "The organization checks whether AI creates inconsistent treatment or harmful outcomes across groups, regions, languages, products, or customer types."],
+             ["Monitoring and alerting", "The organization monitors errors, unsafe content, unusual behavior, performance degradation, and business-impact concerns."],
+             ["Risk reassessment", "Risks are reassessed when the solution changes, new data sources are added, or the deployment expands."]
+           ].map(row => [row[0], row[1], placeholder("Status")])
+         )}
+         ${table(["<span class='score'>Score</span>", "Assessment"], [[`<span class="score input">[1–5]</span>`, placeholder("Explain whether human review, quality controls, output restrictions, monitoring, and risk reassessment are sufficient for this use case.")]])}
+         <p><span class="label">Comments / Evidence</span></p>
+         <p>${placeholder("Describe human oversight, quality review processes, output limits, bias checks, monitoring, escalation actions, and risk reassessment requirements.")}</p>`
+      ],
+      "Governance, Risk, and Security",
+      ["Policies, approval, and accountability", "Data protection, security, and access controls", "Human oversight, quality controls, and ongoing risk management"]
+    );
+
+    document.getElementById("maturity").innerHTML = `
+      <div class="page-break"></div>
+      <h2>3. AI Maturity Map</h2>
+      <div class="definition">
+        <p><strong>Purpose:</strong> The maturity map assesses the organization’s ability to implement, operate, scale, and improve this AI use case responsibly. Score each category from 1 to 5.</p>
+        <p><strong>Scoring scale:</strong> 1 = Not started, 2 = Just starting, 3 = Doing some, 4 = Doing a lot, 5 = Doing this really well.</p>
+      </div>
+      ${table(
+        ['<span class="score">Score</span>', "Maturity level", "Plain-language meaning"],
+        [
+          ['<span class="score">1</span>', "Not started", "Little or no established capability; activity is informal, isolated, or only an idea."],
+          ['<span class="score">2</span>', "Just starting", "Some early activity or experimentation exists, but important gaps remain."],
+          ['<span class="score">3</span>', "Doing some", "Repeatable practices are beginning to form, but they are inconsistent or limited in scope."],
+          ['<span class="score">4</span>', "Doing a lot", "Capabilities are established across several areas and support meaningful deployment."],
+          ['<span class="score">5</span>', "Doing this really well", "Capabilities are mature, integrated, scalable, monitored, and continuously improved."]
+        ]
+      )}
+      ${deployment}
+      ${systems}
+      ${data}
+      ${outcomes}
+      ${people}
+      ${governance}
+
+      <div class="page-break"></div>
+      <h2>10. Final Assessment Summary</h2>
+      ${table(
+        ["Maturity dimension", '<span class="score">Score<br>1–5</span>', "Key strengths", "Key gaps and next actions"],
+        [
+          "Deployment Depth",
+          "Systems Integration",
+          "Data",
+          "Outcomes",
+          "People and Change Enablement",
+          "Governance, Risk, and Security"
+        ].map(item => [item, '<span class="score input">[1–5]</span>', placeholder("Strengths"), placeholder("Gaps and actions")])
+      )}
+      ${assessmentTable([
+        ["Use-case prioritization tier", "Prime Time / Emerging / Frontier"],
+        ["Overall maturity score", "Average of six maturity-dimension scores: __ / 5"],
+        ["Top three strengths", "List strengths"],
+        ["Top three barriers or gaps", "List gaps"],
+        ["Required conditions before implementation or scale-up", "List required approvals, data work, integrations, training, metrics, controls, or staffing"],
+        ["Recommended next step", "Launch pilot / Complete readiness work / Expand deployment / Build foundations / Defer"],
+        ["Accountable owner", "Name and role"],
+        ["Target review date", "Date"]
+      ])}
+    `;
+  </script>
+
+</body>
+</html>
+      
+        id: deployment
+        uses: actions/deploy-pages@v5
